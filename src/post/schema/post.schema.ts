@@ -1,4 +1,4 @@
-import { Schema } from 'mongoose';
+import { Schema, Document } from 'mongoose';
 
 const PostSchema = new Schema(
   {
@@ -22,3 +22,11 @@ const PostSchema = new Schema(
     collection: 'posts',
   },
 );
+
+export { PostSchema };
+
+export interface Post extends Document {
+  title: String;
+  description: String;
+  content: String;
+}
