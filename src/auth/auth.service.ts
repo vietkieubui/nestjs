@@ -3,16 +3,20 @@ import { UserService } from '../user/user.service';
 import { RegisterUserDto, LoginUserDto } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../user/schemas/user.schema';
+import * as bcrypt from 'bcrypt';
+import { AuthRepository } from './repositories/auth.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
+    private readonly authService: AuthService,
     private readonly jwtService: JwtService,
+    private readonly authRepository: AuthRepository,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
-    const user = await this.userService.create(registerUserDto);
+    const user = await this.createUser(registerUserDto);
     const token = await this._createToken(user);
     return {
       email: user.email,
@@ -35,6 +39,37 @@ export class AuthService {
     if (!user) {
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
     }
+    return user;
+  }
+
+  async createUser(registerUserDto: RegisterUserDto) {
+    registerUserDto.password = await bcrypt.hash(registerUserDto.password, 10);
+
+    // check exists
+    const userInDb = await this.authRepository.findByCondition({
+      email: registerUserDto.email,
+    });
+    if (userInDb) {
+      throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
+    }
+    return await this.authRepository.create(registerUserDto);
+  }
+
+  async findByLogin({ email, password }: LoginUserDto) {
+    const user = await this.authRepository.findByCondition({
+      email: email,
+    });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
+    }
+
+    const is_equal = bcrypt.compareSync(password, user.password);
+
+    if (!is_equal) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+
     return user;
   }
 
