@@ -10,7 +10,7 @@ export class PostController {
     return this.postService.getPost();
   }
   @Post()
-  createPost(@Body() post: CreatePostDto) {
+  createPost(@Req() req: any, @Body() post: CreatePostDto) {
     return this.postService.createPost(post);
   }
 }

@@ -2,7 +2,7 @@ import { Schema, Document } from 'mongoose';
 
 const PostSchema = new Schema(
   {
-    title: String,
+    title: { type: String, require: true },
     description: String,
     content: String,
     // created_at: {

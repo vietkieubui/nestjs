@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { BaseRepository } from 'src/base.repository';
-import { Post } from '../schema/post.schema';
+import { Auth } from '../schemas/auth.schema';
 
 @Injectable()
-export class PostRepository extends BaseRepository<Post> {
+export class AuthRepository extends BaseRepository<Auth> {
   constructor(
-    @InjectModel('Post')
-    private readonly postModel: Model<Post>,
+    @InjectModel('User')
+    private readonly authModel: Model<Auth>,
   ) {
-    super(postModel);
+    super(authModel);
   }
 }
