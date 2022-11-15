@@ -1,5 +1,4 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { UserService } from '../user/user.service';
 import { RegisterUserDto, LoginUserDto } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../user/schemas/user.schema';
@@ -9,10 +8,8 @@ import { AuthRepository } from './repositories/auth.repository';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UserService,
-    private readonly authService: AuthService,
-    private readonly jwtService: JwtService,
     private readonly authRepository: AuthRepository,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
@@ -25,7 +22,7 @@ export class AuthService {
   }
 
   async login(loginUserDto: LoginUserDto) {
-    const user = await this.userService.findByLogin(loginUserDto);
+    const user = await this.findByLogin(loginUserDto);
     const token = await this._createToken(user);
 
     return {
@@ -35,7 +32,7 @@ export class AuthService {
   }
 
   async validateUser(email) {
-    const user = await this.userService.findByEmail(email);
+    const user = await this.findByEmail(email);
     if (!user) {
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
     }
@@ -72,6 +69,11 @@ export class AuthService {
 
     return user;
   }
+  async findByEmail(email) {
+    return await this.authRepository.findByCondition({
+      email: email,
+    });
+  }
 
   private async _createToken({ email }, refresh = true) {
     const accessToken = this.jwtService.sign({ email });
@@ -83,7 +85,7 @@ export class AuthService {
           expiresIn: process.env.EXPIRESIN_REFRESH,
         },
       );
-      await this.userService.update(
+      await this.update(
         { email: email },
         {
           refreshToken: refreshToken,
@@ -108,10 +110,7 @@ export class AuthService {
       const payload = await this.jwtService.verify(refresh_token, {
         secret: process.env.SECRETKEY_REFRESH,
       });
-      const user = await this.userService.getUserByRefresh(
-        refresh_token,
-        payload.email,
-      );
+      const user = await this.getUserByRefresh(refresh_token, payload.email);
       const token = await this._createToken(user, false);
       return {
         email: user.email,
@@ -123,9 +122,37 @@ export class AuthService {
   }
 
   async logout(user: User) {
-    await this.userService.update(
-      { email: user.email },
-      { refreshToken: null },
+    await this.update({ email: user.email }, { refreshToken: null });
+  }
+
+  async getUserByRefresh(refresh_token, email) {
+    const user = await this.findByEmail(email);
+    if (!user) {
+      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
+    }
+    const is_equal = await bcrypt.compare(
+      this.reverse(refresh_token),
+      user.refreshToken,
     );
+
+    if (!is_equal) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+
+    return user;
+  }
+
+  async update(filter, update) {
+    if (update.refreshToken) {
+      update.refreshToken = await bcrypt.hash(
+        this.reverse(update.refreshToken),
+        10,
+      );
+    }
+    return await this.authRepository.findByConditionAndUpdate(filter, update);
+  }
+
+  private reverse(s) {
+    return s.split('').reverse().join('');
   }
 }

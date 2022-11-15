@@ -11,6 +11,10 @@ export class PostService {
     return new_post;
   }
 
+  async getAllPosts() {
+    return await this.postRepository.findAll();
+  }
+
   getPost(): string {
     return 'hello Post111112121';
   }

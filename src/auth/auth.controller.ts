@@ -22,7 +22,7 @@ export class AuthController {
     return await this.authService.refresh(body.refresh_token);
   }
 
-  @UseGuards(AuthGuard())
+  @UseGuards(AuthGuard('jwt'))
   @Post('logout')
   async logout(@Req() req: any) {
     await this.authService.logout(req.user);

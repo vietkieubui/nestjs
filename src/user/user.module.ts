@@ -14,7 +14,6 @@ import { PassportModule } from '@nestjs/passport';
         schema: UserSchema,
       },
     ]),
-    PassportModule,
   ],
   providers: [UserService, UserRepository],
   controllers: [UserController],
