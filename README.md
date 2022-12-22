@@ -8,11 +8,6 @@
 $ npm install
 ```
 
-## add .env file
-
-MONGODB_URL=mongodb+srv://admin:12344321@cluster0.reqdx9t.mongodb.net/learn_nestjs?retryWrites=true&w=majority
-SECRETKEY=jakfdahqruewtu0914745423543
-EXPIRESIN=1000000
 
 ## Running the app
 
